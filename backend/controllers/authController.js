@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const User = require('../models/User');
-const { sendEmail } = require('../utils/email');
 const { generateOTP, sendOTPEmail, sendOTPSMS } = require('../utils/brevo');
 
 const signToken = (id, role) =>
@@ -12,7 +11,6 @@ const signRefreshToken = (id) =>
   jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d' });
 
 // ─── REGISTER ────────────────────────────────────────────────────────────────
-
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role, phone } = req.body;
@@ -32,9 +30,12 @@ exports.register = async (req, res) => {
     const allowedRoles = ['customer', 'seller'];
     const userRole = allowedRoles.includes(role) ? role : 'customer';
 
-    // Generate registration OTP
     const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    console.log(`\n🔑 ==========================================`);
+    console.log(`🔑 REGISTRATION OTP for ${email}: ${otp}`);
+    console.log(`🔑 ==========================================\n`);
 
     const user = await User.create({
       name,
@@ -45,9 +46,9 @@ exports.register = async (req, res) => {
       loginOtp: otp,
       loginOtpExpires: otpExpires,
       loginOtpType: 'email',
+      isEmailVerified: false,
     });
 
-    // Send OTP via email
     await sendOTPEmail(email, otp, 'register');
 
     res.status(201).json({
@@ -105,7 +106,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email/phone and password are required' });
     }
 
-    // Find user by email OR phone
     const isEmail = emailOrPhone.includes('@');
     const user = await User.findOne(
       isEmail ? { email: emailOrPhone.toLowerCase() } : { phone: emailOrPhone }
@@ -116,17 +116,16 @@ exports.login = async (req, res) => {
     }
     if (!user.isActive) return res.status(403).json({ success: false, message: 'Account deactivated' });
     if (!user.isEmailVerified) {
-  return res.status(403).json({ 
-    success: false, 
-    message: 'Email not verified. Please complete registration first.' 
-  });
-}
+      return res.status(403).json({ success: false, message: 'Email not verified. Please complete registration first.' });
+    }
 
-    // Generate login OTP
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Decide send method: SMS if phone available, else email
+    console.log(`\n🔑 ==========================================`);
+    console.log(`🔑 LOGIN OTP for ${user.email}: ${otp}`);
+    console.log(`🔑 ==========================================\n`);
+
     let sentVia = 'email';
     if (user.phone && user.phone.length >= 10) {
       await sendOTPSMS(user.phone, otp, 'login');
@@ -199,6 +198,8 @@ exports.resendOTP = async (req, res) => {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
+    console.log(`\n🔑 RESEND OTP for ${user.email}: ${otp}\n`);
+
     let sentVia = 'email';
     if (user.phone && user.phone.length >= 10 && purpose === 'login') {
       await sendOTPSMS(user.phone, otp, purpose);
@@ -233,6 +234,8 @@ exports.forgotPassword = async (req, res) => {
 
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    console.log(`\n🔑 RESET OTP for ${user.email}: ${otp}\n`);
 
     await User.findByIdAndUpdate(user._id, { resetOtp: otp, resetOtpExpires: otpExpires });
 
@@ -272,7 +275,6 @@ exports.verifyResetOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'OTP expired' });
     }
 
-    // Generate a reset token valid for 15 minutes
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
