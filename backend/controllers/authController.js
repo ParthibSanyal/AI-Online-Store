@@ -122,17 +122,23 @@ exports.login = async (req, res) => {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
+
     console.log(`\n🔑 ==========================================`);
     console.log(`🔑 LOGIN OTP for ${user.email}: ${otp}`);
     console.log(`🔑 ==========================================\n`);
 
+    // Decide send method: SMS if phone available, else email
+    // let sentVia = 'email';
+    // if (user.phone && user.phone.length >= 10) {
+    //   await sendOTPSMS(user.phone, otp, 'login');
+    //   sentVia = 'sms';
+    // } else {
+    //   await sendOTPEmail(user.email, otp, 'login');
+    // }
+
+
     let sentVia = 'email';
-    if (user.phone && user.phone.length >= 10) {
-      await sendOTPSMS(user.phone, otp, 'login');
-      sentVia = 'sms';
-    } else {
-      await sendOTPEmail(user.email, otp, 'login');
-    }
+    await sendOTPEmail(user.email, otp, 'login');
 
     await User.findByIdAndUpdate(user._id, {
       loginOtp: otp,
@@ -200,13 +206,16 @@ exports.resendOTP = async (req, res) => {
 
     console.log(`\n🔑 RESEND OTP for ${user.email}: ${otp}\n`);
 
+    // let sentVia = 'email';
+    // if (user.phone && user.phone.length >= 10 && purpose === 'login') {
+    //   await sendOTPSMS(user.phone, otp, purpose);
+    //   sentVia = 'sms';
+    // } else {
+    //   await sendOTPEmail(user.email, otp, purpose);
+    // }
+
     let sentVia = 'email';
-    if (user.phone && user.phone.length >= 10 && purpose === 'login') {
-      await sendOTPSMS(user.phone, otp, purpose);
-      sentVia = 'sms';
-    } else {
-      await sendOTPEmail(user.email, otp, purpose);
-    }
+    await sendOTPEmail(user.email, otp, purpose);
 
     if (purpose === 'reset') {
       await User.findByIdAndUpdate(user._id, { resetOtp: otp, resetOtpExpires: otpExpires });
@@ -239,13 +248,17 @@ exports.forgotPassword = async (req, res) => {
 
     await User.findByIdAndUpdate(user._id, { resetOtp: otp, resetOtpExpires: otpExpires });
 
+    // let sentVia = 'email';
+    // if (!isEmail && user.phone) {
+    //   await sendOTPSMS(user.phone, otp, 'reset');
+    //   sentVia = 'sms';
+    // } else {
+    //   await sendOTPEmail(user.email, otp, 'reset');
+    // }
+
+
     let sentVia = 'email';
-    if (!isEmail && user.phone) {
-      await sendOTPSMS(user.phone, otp, 'reset');
-      sentVia = 'sms';
-    } else {
-      await sendOTPEmail(user.email, otp, 'reset');
-    }
+    await sendOTPEmail(user.email, otp, 'reset');
 
     res.json({
       success: true,

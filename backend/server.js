@@ -58,6 +58,8 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/coupons', require('./routes/coupons'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seller', require('./routes/seller'));
+app.use('/api/chat', require('./routes/chat'));
+app.use('/api/subscription', require('./routes/subscription'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'AI Shop API is running' }));

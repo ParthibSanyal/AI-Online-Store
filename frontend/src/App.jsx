@@ -47,6 +47,11 @@ import EditProduct from './pages/seller/EditProduct';
 import LoadingScreen, { LoadingScreen as LS } from './components/common/LoadingScreen';
 import ChatBot from './components/common/ChatBot';
 
+
+import AdminChat from './pages/admin/Chat';
+import LiveAnalysis from './pages/admin/LiveAnalysis';
+import Subscription from './pages/customer/Subscription';
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, initialized } = useAuthStore();
   if (!initialized) return <LoadingScreen />;
@@ -107,6 +112,7 @@ export default function App() {
           <Route path="wishlist" element={<ProtectedRoute allowedRoles={['customer']}><Wishlist /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute allowedRoles={['customer']}><Profile /></ProtectedRoute>} />
           <Route path="notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="subscription" element={<ProtectedRoute allowedRoles={['customer']}><Subscription /></ProtectedRoute>} />
         </Route>
 
         {/* Admin Routes */}
@@ -116,6 +122,8 @@ export default function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="coupons" element={<AdminCoupons />} />
+          <Route path="chat" element={<AdminChat />} />
+          <Route path="live-analysis" element={<LiveAnalysis />} />
         </Route>
 
         {/* Seller Routes */}

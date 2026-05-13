@@ -2,20 +2,28 @@ exports.socketHandler = (io) => {
   io.on('connection', (socket) => {
     console.log('Socket connected:', socket.id);
 
-    // User joins their own room
     socket.on('join', (userId) => {
       socket.join(`user_${userId}`);
-      console.log(`User ${userId} joined their room`);
     });
 
-    // Real-time order tracking
+    socket.on('joinAdmin', () => {
+      socket.join('admin_room');
+    });
+
     socket.on('trackOrder', (orderId) => {
       socket.join(`order_${orderId}`);
     });
 
-    // Admin joins admin room
-    socket.on('joinAdmin', () => {
-      socket.join('admin');
+    socket.on('typing', ({ chatId, isAdmin }) => {
+      if (isAdmin) {
+        io.to(`chat_${chatId}`).emit('typing', { isAdmin: true });
+      } else {
+        io.to('admin_room').emit('typing', { chatId, isAdmin: false });
+      }
+    });
+
+    socket.on('joinChat', (chatId) => {
+      socket.join(`chat_${chatId}`);
     });
 
     socket.on('disconnect', () => {

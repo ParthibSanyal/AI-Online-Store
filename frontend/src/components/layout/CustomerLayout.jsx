@@ -10,7 +10,9 @@ import {
 import useAuthStore from '../../context/authStore';
 import useCartStore from '../../context/cartStore';
 import { useThemeStore, useNotifStore, useWishlistStore } from '../../context/stores';
+import LiveChat from '../common/LiveChat';
 import toast from 'react-hot-toast';
+import { Crown } from 'lucide-react';
 
 export default function CustomerLayout() {
   const { user, logout } = useAuthStore();
@@ -65,6 +67,7 @@ export default function CustomerLayout() {
     { to: '/products', label: 'Products', icon: Grid3X3 },
     { to: '/orders', label: 'My Orders', icon: Package, auth: true },
     { to: '/wishlist', label: 'Wishlist', icon: Heart, auth: true },
+    { to: '/subscription', label: 'Premium', icon: Crown, auth: true },
   ];
 
   return (
@@ -275,6 +278,7 @@ export default function CustomerLayout() {
           </div>
         </div>
       </footer>
+      <LiveChat />
     </div>
   );
 }

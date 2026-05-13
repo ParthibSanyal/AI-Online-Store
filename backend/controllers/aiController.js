@@ -157,3 +157,62 @@ exports.smartSearch = async (req, res) => {
     res.json({ success: true, products });
   }
 };
+
+
+
+exports.getLiveAnalysis = async (req, res) => {
+  try {
+    const Product = require('../models/Product');
+    const Order = require('../models/Order');
+    const User = require('../models/User');
+
+    const [
+      totalUsers,
+      totalOrders,
+      totalProducts,
+      recentOrders,
+      topProducts,
+      revenue,
+    ] = await Promise.all([
+      User.countDocuments({ isActive: true }),
+      Order.countDocuments(),
+      Product.countDocuments({ isActive: true }),
+      Order.find().sort('-createdAt').limit(5).populate('user', 'name'),
+      Product.find().sort('-viewCount').limit(5).select('name viewCount soldCount'),
+      Order.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$total' } } },
+      ]),
+    ]);
+
+    // Use Groq to generate analysis
+    const Groq = require('groq-sdk');
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const prompt = `Analyze this e-commerce data and give 3 short business insights:
+    - Total Users: ${totalUsers}
+    - Total Orders: ${totalOrders}
+    - Total Products: ${totalProducts}
+    - Total Revenue: ₹${revenue[0]?.total || 0}
+    - Top Product: ${topProducts[0]?.name} (${topProducts[0]?.viewCount} views)
+    Keep each insight under 20 words. Be direct and actionable.`;
+
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200,
+    });
+
+    const insights = completion.choices[0]?.message?.content || 'Analysis unavailable';
+
+    res.json({
+      success: true,
+      stats: { totalUsers, totalOrders, totalProducts, revenue: revenue[0]?.total || 0 },
+      topProducts,
+      recentOrders,
+      aiInsights: insights,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

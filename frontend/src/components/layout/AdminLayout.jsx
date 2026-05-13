@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../context/authStore';
 import { useThemeStore } from '../../context/stores';
+import { MessageCircle, Brain } from 'lucide-react';
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -13,6 +14,8 @@ const links = [
   { to: '/admin/orders', label: 'Orders', icon: Package },
   { to: '/admin/products', label: 'Products', icon: ShoppingBag },
   { to: '/admin/coupons', label: 'Coupons', icon: Tag },
+  { to: '/admin/chat', label: 'Live Chat', icon: MessageCircle },
+  { to: '/admin/live-analysis', label: 'Live Analysis', icon: Brain },
 ];
 
 export default function AdminLayout() {
